@@ -25,11 +25,22 @@ import {
   UpdateTimetableResponse,
   type User,
 } from "@workspace/api-zod";
-import { requireAuth } from "../lib/auth";
+import { resolveSession } from "../lib/auth";
 
 const router: IRouter = Router();
 
-router.use(requireAuth);
+const DEMO_USER: User = {
+  id: 1,
+  name: "Amara Okafor",
+  email: "amara@campus.test",
+  school: "University of Lagos",
+  program: "Computer Science",
+  year: "300 level",
+};
+
+function currentUser(req: import("express").Request): User {
+  return resolveSession(req.cookies?.["campusos_session"]) ?? DEMO_USER;
+}
 
 type Assignment = {
   id: number;
@@ -243,16 +254,16 @@ function dashboardPayload(user: User) {
   });
 }
 
-router.get("/dashboard", (req, res) => res.json(dashboardPayload(req.user as User)));
-router.get("/signals", (req, res) => res.json(GetSignalsResponse.parse(buildSignals(getUserData(req.user as User)))));
-router.get("/mood-checkins", (req, res) => res.json(GetMoodCheckInsResponse.parse(getUserData(req.user as User).moodCheckIns)));
-router.get("/assignments", (req, res) => res.json(GetAssignmentsResponse.parse(getUserData(req.user as User).assignments)));
-router.get("/finance-events", (req, res) => res.json(GetFinanceEventsResponse.parse(getUserData(req.user as User).financeEvents)));
-router.get("/work-hours", (req, res) => res.json(GetWorkHoursResponse.parse(getUserData(req.user as User).workHours)));
-router.get("/sleep-logs", (req, res) => res.json(GetSleepLogsResponse.parse(getUserData(req.user as User).sleepLogs)));
+router.get("/dashboard", (req, res) => res.json(dashboardPayload(currentUser(req))));
+router.get("/signals", (req, res) => res.json(GetSignalsResponse.parse(buildSignals(getUserData(currentUser(req))))));
+router.get("/mood-checkins", (req, res) => res.json(GetMoodCheckInsResponse.parse(getUserData(currentUser(req)).moodCheckIns)));
+router.get("/assignments", (req, res) => res.json(GetAssignmentsResponse.parse(getUserData(currentUser(req)).assignments)));
+router.get("/finance-events", (req, res) => res.json(GetFinanceEventsResponse.parse(getUserData(currentUser(req)).financeEvents)));
+router.get("/work-hours", (req, res) => res.json(GetWorkHoursResponse.parse(getUserData(currentUser(req)).workHours)));
+router.get("/sleep-logs", (req, res) => res.json(GetSleepLogsResponse.parse(getUserData(currentUser(req)).sleepLogs)));
 
 router.post("/mood-checkins", (req, res) => {
-  const user = req.user as User;
+  const user = currentUser(req);
   const data = getUserData(user);
   const input = CreateMoodCheckInBody.parse(req.body);
   const item = { id: data.nextId++, date: today(), moodScore: input.moodScore, note: input.note ?? null };
@@ -261,7 +272,7 @@ router.post("/mood-checkins", (req, res) => {
 });
 
 router.post("/assignments", (req, res) => {
-  const user = req.user as User;
+  const user = currentUser(req);
   const data = getUserData(user);
   const input = CreateAssignmentBody.parse(req.body);
   const item: Assignment = { id: data.nextId++, title: input.title, course: input.course, dueDate: input.dueDate, status: "pending", priority: input.priority ?? "medium" };
@@ -270,7 +281,7 @@ router.post("/assignments", (req, res) => {
 });
 
 router.post("/finance-events", (req, res) => {
-  const user = req.user as User;
+  const user = currentUser(req);
   const data = getUserData(user);
   const input = CreateFinanceEventBody.parse(req.body);
   const item: FinanceEvent = { id: data.nextId++, type: input.type, label: input.label, date: input.date, amount: input.amount ?? null, category: input.category };
@@ -451,7 +462,7 @@ function buildReply(message: string, intent: IntentId, data: UserData): { text: 
 }
 
 router.post("/chat", (req, res) => {
-  const user = req.user as User;
+  const user = currentUser(req);
   const data = getUserData(user);
   const { message } = SendChatMessageBody.parse(req.body);
 
@@ -528,7 +539,7 @@ function matchScholarships(user: User) {
 }
 
 router.get("/scholarships", (req, res) => {
-  res.json(matchScholarships(req.user as User));
+  res.json(matchScholarships(currentUser(req)));
 });
 
 // ---------------------------------------------------------------------------
@@ -536,7 +547,7 @@ router.get("/scholarships", (req, res) => {
 // ---------------------------------------------------------------------------
 
 router.get("/money/stress-impact", (req, res) => {
-  const data = getUserData(req.user as User);
+  const data = getUserData(currentUser(req));
   const mood = data.moodCheckIns.slice(0, 14);
   const finance = data.financeEvents.filter((e) => e.type === "expense" || e.type === "deadline");
   const moneyStress = Math.min(100, finance.length * 18 + (data.financeEvents.some((e) => e.label.toLowerCase().includes("fafsa")) ? 15 : 0));
@@ -586,7 +597,7 @@ function intensityOf(count: number, highPriority: number): "light" | "moderate" 
 }
 
 router.get("/grind/workload", (req, res) => {
-  const data = getUserData(req.user as User);
+  const data = getUserData(currentUser(req));
   const weeks = new Map<string, Assignment[]>();
   for (const assignment of data.assignments) {
     const key = weekLabel(assignment.dueDate);
@@ -613,7 +624,7 @@ router.get("/grind/workload", (req, res) => {
 // ---------------------------------------------------------------------------
 
 router.get("/grind/conflicts", (req, res) => {
-  const data = getUserData(req.user as User);
+  const data = getUserData(currentUser(req));
   const active = data.assignments.filter((a) => a.status !== "submitted");
   const grouped = new Map<string, Assignment[]>();
   for (const assignment of active) {
@@ -657,7 +668,7 @@ function energyLevelFor(data: UserData, day: string): "high" | "medium" | "low" 
 }
 
 router.get("/grind/study-plan", (req, res) => {
-  const user = req.user as User;
+  const user = currentUser(req);
   const data = getUserData(user);
   const now = new Date();
   const start = now.getDay(); // 0 = Sunday
@@ -705,11 +716,11 @@ router.get("/grind/study-plan", (req, res) => {
 // ---------------------------------------------------------------------------
 
 router.get("/grind/timetable", (req, res) => {
-  res.json(GetTimetableResponse.parse(getUserData(req.user as User).timetable));
+  res.json(GetTimetableResponse.parse(getUserData(currentUser(req)).timetable));
 });
 
 router.post("/grind/timetable", (req, res) => {
-  const user = req.user as User;
+  const user = currentUser(req);
   const data = getUserData(user);
   const input = UpdateTimetableBody.parse(req.body);
   const blocks: TimetableBlock[] = input.blocks.map((block, index) => ({
