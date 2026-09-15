@@ -272,6 +272,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FinanceEvent"
+  /finance-events/{id}:
+    patch:
+      operationId: updateFinanceEvent
+      tags: [campusos]
+      summary: Mark a finance event as done (e.g. filed FAFSA)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceEventStatusUpdate"
+      responses:
+        "200":
+          description: Updated finance event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceEvent"
+        "404":
+          description: Finance event not found
   /work-hours:
     get:
       operationId: getWorkHours
@@ -314,6 +339,48 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Scholarship"
+    post:
+      operationId: createScholarship
+      tags: [campusos]
+      summary: Add a scholarship you found
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipInput"
+      responses:
+        "201":
+          description: Created scholarship
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scholarship"
+  /scholarships/{id}:
+    patch:
+      operationId: updateScholarship
+      tags: [campusos]
+      summary: Mark a scholarship as applied (or not)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScholarshipApplied"
+      responses:
+        "200":
+          description: Updated scholarship
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scholarship"
+        "404":
+          description: Scholarship not found
   /money/stress-impact:
     get:
       operationId: getStressImpact
@@ -521,6 +588,7 @@ components:
         date: { type: string }
         amount: { type: ["number", "null"] }
         category: { type: string }
+        done: { type: boolean }
     FinanceEventInput:
       type: object
       required: [type, label, date, category]
@@ -530,6 +598,11 @@ components:
         date: { type: string }
         amount: { type: number }
         category: { type: string }
+    FinanceEventStatusUpdate:
+      type: object
+      properties:
+        done: { type: boolean }
+      required: [done]
     WorkHours:
       type: object
       required: [id, week, hoursWorked]
@@ -600,7 +673,7 @@ components:
         intent: { type: string, nullable: true }
     Scholarship:
       type: object
-      required: [id, name, provider, deadline, amount, category, eligible, matchScore]
+      required: [id, name, provider, deadline, amount, category, eligible, matchScore, matchReason, applied]
       properties:
         id: { type: integer }
         name: { type: string }
@@ -611,6 +684,21 @@ components:
         eligible: { type: boolean }
         matchScore: { type: integer, minimum: 0, maximum: 100 }
         matchReason: { type: string }
+        applied: { type: boolean }
+    ScholarshipInput:
+      type: object
+      required: [name, provider, deadline]
+      properties:
+        name: { type: string }
+        provider: { type: string }
+        deadline: { type: string }
+        amount: { type: integer }
+        category: { type: string }
+    ScholarshipApplied:
+      type: object
+      required: [applied]
+      properties:
+        applied: { type: boolean }
     StressImpact:
       type: object
       required: [periods, overallCorrelation, insight, recommendation]

@@ -320,7 +320,8 @@ export const GetFinanceEventsResponseItem = zod.object({
   "label": zod.string(),
   "date": zod.string(),
   "amount": zod.number().nullable(),
-  "category": zod.string()
+  "category": zod.string(),
+  "done": zod.boolean().optional()
 })
 export const GetFinanceEventsResponse = zod.array(GetFinanceEventsResponseItem)
 
@@ -342,7 +343,30 @@ export const CreateFinanceEventResponse = zod.object({
   "label": zod.string(),
   "date": zod.string(),
   "amount": zod.number().nullable(),
-  "category": zod.string()
+  "category": zod.string(),
+  "done": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Mark a finance event as done (e.g. filed FAFSA)
+ */
+export const UpdateFinanceEventParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateFinanceEventBody = zod.object({
+  "done": zod.boolean()
+})
+
+export const UpdateFinanceEventResponse = zod.object({
+  "id": zod.number().int(),
+  "type": zod.enum(['deadline', 'expense', 'income']),
+  "label": zod.string(),
+  "date": zod.string(),
+  "amount": zod.number().nullable(),
+  "category": zod.string(),
+  "done": zod.boolean().optional()
 })
 
 
@@ -385,9 +409,70 @@ export const GetScholarshipsResponseItem = zod.object({
   "category": zod.string(),
   "eligible": zod.boolean(),
   "matchScore": zod.number().int().min(getScholarshipsResponseMatchScoreMin).max(getScholarshipsResponseMatchScoreMax),
-  "matchReason": zod.string().optional()
+  "matchReason": zod.string(),
+  "applied": zod.boolean()
 })
 export const GetScholarshipsResponse = zod.array(GetScholarshipsResponseItem)
+
+
+/**
+ * @summary Add a scholarship you found
+ */
+export const CreateScholarshipBody = zod.object({
+  "name": zod.string(),
+  "provider": zod.string(),
+  "deadline": zod.string(),
+  "amount": zod.number().int().optional(),
+  "category": zod.string().optional()
+})
+
+export const createScholarshipResponseMatchScoreMin = 0;
+export const createScholarshipResponseMatchScoreMax = 100;
+
+
+
+export const CreateScholarshipResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "provider": zod.string(),
+  "deadline": zod.string(),
+  "amount": zod.number().int(),
+  "category": zod.string(),
+  "eligible": zod.boolean(),
+  "matchScore": zod.number().int().min(createScholarshipResponseMatchScoreMin).max(createScholarshipResponseMatchScoreMax),
+  "matchReason": zod.string(),
+  "applied": zod.boolean()
+})
+
+
+/**
+ * @summary Mark a scholarship as applied (or not)
+ */
+export const UpdateScholarshipParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateScholarshipBody = zod.object({
+  "applied": zod.boolean()
+})
+
+export const updateScholarshipResponseMatchScoreMin = 0;
+export const updateScholarshipResponseMatchScoreMax = 100;
+
+
+
+export const UpdateScholarshipResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "provider": zod.string(),
+  "deadline": zod.string(),
+  "amount": zod.number().int(),
+  "category": zod.string(),
+  "eligible": zod.boolean(),
+  "matchScore": zod.number().int().min(updateScholarshipResponseMatchScoreMin).max(updateScholarshipResponseMatchScoreMax),
+  "matchReason": zod.string(),
+  "applied": zod.boolean()
+})
 
 
 /**

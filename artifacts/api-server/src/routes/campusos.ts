@@ -6,6 +6,8 @@ import {
   CreateFinanceEventResponse,
   CreateMoodCheckInBody,
   CreateMoodCheckInResponse,
+  CreateScholarshipBody,
+  CreateScholarshipResponse,
   GetAssignmentsResponse,
   GetDashboardResponse,
   GetFinanceEventsResponse,
@@ -13,17 +15,21 @@ import {
   GetSignalsResponse,
   GetSleepLogsResponse,
   GetWorkHoursResponse,
-  SendChatMessageBody,
-  SendChatMessageResponse,
   GetScholarshipsResponse,
   GetStressImpactResponse,
   GetWorkloadResponse,
   GetConflictsResponse,
   GetStudyPlanResponse,
   GetTimetableResponse,
+  SendChatMessageBody,
+  SendChatMessageResponse,
+  UpdateAssignmentBody,
+  UpdateFinanceEventBody,
+  UpdateFinanceEventResponse,
+  UpdateScholarshipBody,
+  UpdateScholarshipResponse,
   UpdateTimetableBody,
   UpdateTimetableResponse,
-  UpdateAssignmentBody,
   type User,
 } from "@workspace/api-zod";
 import { resolveSession } from "../lib/auth";
@@ -66,6 +72,7 @@ type FinanceEvent = {
   date: string;
   amount: number | null;
   category: string;
+  done: boolean;
 };
 
 type WorkHours = { id: number; week: string; hoursWorked: number };
@@ -92,6 +99,20 @@ type TimetableBlock = {
   energyFit: "high" | "medium" | "low";
 };
 
+type ScholarshipItem = {
+  id: number;
+  name: string;
+  provider: string;
+  deadline: string;
+  amount: number;
+  category: string;
+  eligible: boolean;
+  matchScore: number;
+  matchReason: string;
+  applied: boolean;
+  userAdded: boolean;
+};
+
 type UserData = {
   moodCheckIns: MoodCheckIn[];
   assignments: Assignment[];
@@ -100,6 +121,7 @@ type UserData = {
   sleepLogs: SleepLog[];
   chatHistory: ChatTurn[];
   timetable: TimetableBlock[];
+  scholarships: ScholarshipItem[];
   nextId: number;
 };
 
@@ -130,11 +152,11 @@ function freshUserData(): UserData {
       { id: 6, title: "Algorithms take-home", course: "CSC 312", dueDate: daysAgo(5), status: "late", priority: "high" },
     ],
     financeEvents: [
-      { id: 1, type: "deadline", label: "FAFSA renewal", date: daysAgo(-9), amount: null, category: "Financial aid" },
-      { id: 2, type: "deadline", label: "Faculty scholarship application", date: daysAgo(-14), amount: null, category: "Scholarships" },
-      { id: 3, type: "expense", label: "Rent + utilities", date: daysAgo(12), amount: 82000, category: "Housing" },
-      { id: 4, type: "expense", label: "Transport", date: daysAgo(9), amount: 12000, category: "Daily life" },
-      { id: 5, type: "income", label: "Campus job", date: daysAgo(10), amount: 145000, category: "Income" },
+      { id: 1, type: "deadline", label: "FAFSA renewal", date: daysAgo(-9), amount: null, category: "Financial aid", done: false },
+      { id: 2, type: "deadline", label: "Faculty scholarship application", date: daysAgo(-14), amount: null, category: "Scholarships", done: false },
+      { id: 3, type: "expense", label: "Rent + utilities", date: daysAgo(12), amount: 82000, category: "Housing", done: false },
+      { id: 4, type: "expense", label: "Transport", date: daysAgo(9), amount: 12000, category: "Daily life", done: false },
+      { id: 5, type: "income", label: "Campus job", date: daysAgo(10), amount: 145000, category: "Income", done: false },
     ],
     workHours: [
       { id: 1, week: "Sep 15", hoursWorked: 28 },
@@ -160,6 +182,7 @@ function freshUserData(): UserData {
       { id: 7, day: "Friday", startHour: 10, endHour: 12, activity: "Deep Work – Assignment Block", energyFit: "medium" },
       { id: 8, day: "Friday", startHour: 14, endHour: 16, activity: "Light Review & Catch-up", energyFit: "low" },
     ],
+    scholarships: [],
     nextId: 20,
   };
 }
@@ -299,9 +322,23 @@ router.post("/finance-events", (req, res) => {
   const user = currentUser(req);
   const data = getUserData(user);
   const input = CreateFinanceEventBody.parse(req.body);
-  const item: FinanceEvent = { id: data.nextId++, type: input.type, label: input.label, date: input.date, amount: input.amount ?? null, category: input.category };
+  const item: FinanceEvent = { id: data.nextId++, type: input.type, label: input.label, date: input.date, amount: input.amount ?? null, category: input.category, done: false };
   data.financeEvents = [item, ...data.financeEvents];
   res.status(201).json(CreateFinanceEventResponse.parse(item));
+});
+
+router.patch("/finance-events/:id", (req, res) => {
+  const user = currentUser(req);
+  const data = getUserData(user);
+  const id = Number(req.params.id);
+  const event = data.financeEvents.find((e) => e.id === id);
+  if (!event) {
+    res.status(404).json({ error: "Finance event not found." });
+    return;
+  }
+  const { done } = UpdateFinanceEventBody.parse(req.body);
+  event.done = done;
+  res.json(UpdateFinanceEventResponse.parse(event));
 });
 
 // ---------------------------------------------------------------------------
@@ -551,37 +588,89 @@ const SCHOLARSHIPS = [
   { name: "CBN Intervention for Undergraduates", provider: "Central Bank", deadline: "2026-10-12", amount: 200000, category: "Need-based", programs: [], maxEntries: 0 },
 ];
 
-function matchScholarships(user: User) {
+function matchScholarships(user: User): ScholarshipItem[] {
   const programLower = user.program.toLowerCase();
-  return GetScholarshipsResponse.parse(
-    SCHOLARSHIPS.map((s, index) => {
-      let score = 55;
-      if (s.programs.length === 0 || s.programs.some((p) => programLower.includes(p.toLowerCase()))) {
-        score += 20;
-      }
-      if (s.category === "Merit") score += 10;
-      if (s.category === "Diversity" || s.category === "Need-based") score += 12;
-      const deadlineDays = Math.round((new Date(s.deadline).getTime() - Date.now()) / 86400000);
-      if (deadlineDays >= 0 && deadlineDays <= 7) score += 8;
-      const eligible = deadlineDays >= 0 || s.maxEntries > 0;
-      const matchScore = Math.min(100, score);
-      return {
-        id: index + 1,
-        name: s.name,
-        provider: s.provider,
-        deadline: s.deadline,
-        amount: s.amount,
-        category: s.category,
-        eligible,
-        matchScore,
-        matchReason: `Matches your ${s.programs.length ? `${s.programs.join(", ")}` : "academic profile"}${s.category === "Diversity" || s.category === "Need-based" ? " and support criteria" : ""}.`,
-      };
-    }),
-  );
+  return SCHOLARSHIPS.map((s, index) => {
+    let score = 55;
+    if (s.programs.length === 0 || s.programs.some((p) => programLower.includes(p.toLowerCase()))) {
+      score += 20;
+    }
+    if (s.category === "Merit") score += 10;
+    if (s.category === "Diversity" || s.category === "Need-based") score += 12;
+    const deadlineDays = Math.round((new Date(s.deadline).getTime() - Date.now()) / 86400000);
+    if (deadlineDays >= 0 && deadlineDays <= 7) score += 8;
+    const eligible = deadlineDays >= 0 || s.maxEntries > 0;
+    const matchScore = Math.min(100, score);
+    return {
+      id: index + 1,
+      name: s.name,
+      provider: s.provider,
+      deadline: s.deadline,
+      amount: s.amount,
+      category: s.category,
+      eligible,
+      matchScore,
+      matchReason: `Matches your ${s.programs.length ? `${s.programs.join(", ")}` : "academic profile"}${s.category === "Diversity" || s.category === "Need-based" ? " and support criteria" : ""}.`,
+      applied: false,
+      userAdded: false,
+    };
+  });
 }
 
 router.get("/scholarships", (req, res) => {
-  res.json(matchScholarships(currentUser(req)));
+  const user = currentUser(req);
+  const data = getUserData(user);
+  const matches = matchScholarships(user);
+  const combined = data.scholarships.length
+    ? [...data.scholarships, ...matches.filter((m) => !data.scholarships.some((s) => s.name === m.name))]
+    : matches;
+  res.json(GetScholarshipsResponse.parse(combined));
+});
+
+router.post("/scholarships", (req, res) => {
+  const user = currentUser(req);
+  const data = getUserData(user);
+  const input = CreateScholarshipBody.parse(req.body);
+  const item: ScholarshipItem = {
+    id: data.nextId++,
+    name: input.name,
+    provider: input.provider,
+    deadline: input.deadline,
+    amount: input.amount ?? 0,
+    category: input.category ?? "Other",
+    eligible: true,
+    matchScore: 75,
+    matchReason: "Added by you — stay on top of the deadline.",
+    applied: false,
+    userAdded: true,
+  };
+  data.scholarships = [item, ...data.scholarships];
+  res.status(201).json(CreateScholarshipResponse.parse(item));
+});
+
+router.patch("/scholarships/:id", (req, res) => {
+  const user = currentUser(req);
+  const data = getUserData(user);
+  const id = Number(req.params.id);
+  const matches = matchScholarships(user);
+  const target =
+    data.scholarships.find((s) => s.id === id) ??
+    matches.find((m) => m.id === id);
+  if (!target) {
+    res.status(404).json({ error: "Scholarship not found." });
+    return;
+  }
+  const { applied } = UpdateScholarshipBody.parse(req.body);
+  target.applied = applied;
+  if (target.userAdded) {
+    const stored = data.scholarships.find((s) => s.id === id);
+    if (stored) stored.applied = applied;
+  } else {
+    const existing = data.scholarships.find((s) => s.name === target.name);
+    if (existing) existing.applied = applied;
+    else data.scholarships.push({ ...target, applied });
+  }
+  res.json(UpdateScholarshipResponse.parse(target));
 });
 
 // ---------------------------------------------------------------------------

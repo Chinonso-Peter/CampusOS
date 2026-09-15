@@ -19,5 +19,6 @@ export interface Scholarship {
      * @maximum 100
      */
   matchScore: number;
-  matchReason?: string;
+  matchReason: string;
+  applied: boolean;
 }

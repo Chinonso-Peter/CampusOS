@@ -31,6 +31,7 @@ import type {
   ErrorBody,
   FinanceEvent,
   FinanceEventInput,
+  FinanceEventStatusUpdate,
   HealthStatus,
   LoginInput,
   MoodCheckIn,
@@ -39,6 +40,8 @@ import type {
   ProfileUpdate,
   RegisterInput,
   Scholarship,
+  ScholarshipApplied,
+  ScholarshipInput,
   Signal,
   SleepLog,
   StressImpact,
@@ -1386,6 +1389,95 @@ export const useCreateFinanceEvent = <TError = ErrorType<unknown>,
       return useMutation(getCreateFinanceEventMutationOptions(options));
     }
 
+export const getUpdateFinanceEventUrl = (id: number,) => {
+
+
+
+
+  return `/api/finance-events/${id}`
+}
+
+/**
+ * @summary Mark a finance event as done (e.g. filed FAFSA)
+ */
+export const updateFinanceEvent = async (id: number,
+    financeEventStatusUpdate: FinanceEventStatusUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FinanceEvent> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FinanceEvent>(getUpdateFinanceEventUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(financeEventStatusUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateFinanceEventMutationKey = () => ['updateFinanceEvent'] as const;
+
+export const getUpdateFinanceEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFinanceEvent>>, TError,UpdateFinanceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFinanceEvent>>, TError,UpdateFinanceEventMutationVariables, TContext> => {
+
+const mutationKey = getUpdateFinanceEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFinanceEvent>>, UpdateFinanceEventMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateFinanceEvent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFinanceEventMutationResult = NonNullable<Awaited<ReturnType<typeof updateFinanceEvent>>>
+    export type UpdateFinanceEventMutationBody = BodyType<FinanceEventStatusUpdate>
+    export type UpdateFinanceEventMutationError = ErrorType<void>
+    export type UpdateFinanceEventMutationVariables = {id: number;data: BodyType<FinanceEventStatusUpdate>}
+
+    /**
+ * @summary Mark a finance event as done (e.g. filed FAFSA)
+ */
+export const useUpdateFinanceEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFinanceEvent>>, TError,UpdateFinanceEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateFinanceEvent>>,
+        TError,
+        UpdateFinanceEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateFinanceEventMutationOptions(options));
+    }
+
 export const getGetWorkHoursUrl = () => {
 
 
@@ -1616,6 +1708,183 @@ export function useGetScholarships<TData = Awaited<ReturnType<typeof getScholars
 
 
 
+
+export const getCreateScholarshipUrl = () => {
+
+
+
+
+  return `/api/scholarships`
+}
+
+/**
+ * @summary Add a scholarship you found
+ */
+export const createScholarship = async (scholarshipInput: ScholarshipInput, options?: Parameters<typeof customFetch>[1]): Promise<Scholarship> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Scholarship>(getCreateScholarshipUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scholarshipInput)
+  }
+);}
+
+
+
+
+
+export const getCreateScholarshipMutationKey = () => ['createScholarship'] as const;
+
+export const getCreateScholarshipMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createScholarship>>, TError,CreateScholarshipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createScholarship>>, TError,CreateScholarshipMutationVariables, TContext> => {
+
+const mutationKey = getCreateScholarshipMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createScholarship>>, CreateScholarshipMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createScholarship(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateScholarshipMutationResult = NonNullable<Awaited<ReturnType<typeof createScholarship>>>
+    export type CreateScholarshipMutationBody = BodyType<ScholarshipInput>
+    export type CreateScholarshipMutationError = ErrorType<unknown>
+    export type CreateScholarshipMutationVariables = {data: BodyType<ScholarshipInput>}
+
+    /**
+ * @summary Add a scholarship you found
+ */
+export const useCreateScholarship = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createScholarship>>, TError,CreateScholarshipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createScholarship>>,
+        TError,
+        CreateScholarshipMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateScholarshipMutationOptions(options));
+    }
+
+export const getUpdateScholarshipUrl = (id: number,) => {
+
+
+
+
+  return `/api/scholarships/${id}`
+}
+
+/**
+ * @summary Mark a scholarship as applied (or not)
+ */
+export const updateScholarship = async (id: number,
+    scholarshipApplied: ScholarshipApplied, options?: Parameters<typeof customFetch>[1]): Promise<Scholarship> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Scholarship>(getUpdateScholarshipUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scholarshipApplied)
+  }
+);}
+
+
+
+
+
+export const getUpdateScholarshipMutationKey = () => ['updateScholarship'] as const;
+
+export const getUpdateScholarshipMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateScholarship>>, TError,UpdateScholarshipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateScholarship>>, TError,UpdateScholarshipMutationVariables, TContext> => {
+
+const mutationKey = getUpdateScholarshipMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateScholarship>>, UpdateScholarshipMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateScholarship(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateScholarshipMutationResult = NonNullable<Awaited<ReturnType<typeof updateScholarship>>>
+    export type UpdateScholarshipMutationBody = BodyType<ScholarshipApplied>
+    export type UpdateScholarshipMutationError = ErrorType<void>
+    export type UpdateScholarshipMutationVariables = {id: number;data: BodyType<ScholarshipApplied>}
+
+    /**
+ * @summary Mark a scholarship as applied (or not)
+ */
+export const useUpdateScholarship = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateScholarship>>, TError,UpdateScholarshipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateScholarship>>,
+        TError,
+        UpdateScholarshipMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateScholarshipMutationOptions(options));
+    }
 
 export const getGetStressImpactUrl = () => {
 

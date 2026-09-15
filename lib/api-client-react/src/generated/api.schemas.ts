@@ -152,6 +152,7 @@ export interface FinanceEvent {
   /** @nullable */
   amount: number | null;
   category: string;
+  done?: boolean;
 }
 
 export type FinanceEventInputType = typeof FinanceEventInputType[keyof typeof FinanceEventInputType];
@@ -169,6 +170,10 @@ export interface FinanceEventInput {
   date: string;
   amount?: number;
   category: string;
+}
+
+export interface FinanceEventStatusUpdate {
+  done: boolean;
 }
 
 export interface WorkHours {
@@ -264,7 +269,20 @@ export interface Scholarship {
      * @maximum 100
      */
   matchScore: number;
-  matchReason?: string;
+  matchReason: string;
+  applied: boolean;
+}
+
+export interface ScholarshipInput {
+  name: string;
+  provider: string;
+  deadline: string;
+  amount?: number;
+  category?: string;
+}
+
+export interface ScholarshipApplied {
+  applied: boolean;
 }
 
 export type StressImpactPeriodsItem = {

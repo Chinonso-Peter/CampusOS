@@ -15,4 +15,5 @@ export interface FinanceEvent {
   /** @nullable */
   amount: number | null;
   category: string;
+  done?: boolean;
 }
