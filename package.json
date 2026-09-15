@@ -6,7 +6,10 @@
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "dev": "bash ./scripts/dev.sh",
+    "dev:api": "PORT=${PORT:-5000} pnpm --filter @workspace/api-server run dev",
+    "dev:web": "PORT=${WEB_PORT:-5173} BASE_PATH=${BASE_PATH:-/} API_PROXY_TARGET=${API_PROXY_TARGET:-http://localhost:5000} pnpm --filter @workspace/campusos run dev"
   },
   "private": true,
   "dependencies": {

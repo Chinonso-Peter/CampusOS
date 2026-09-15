@@ -18,8 +18,95 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * Registers a new student and starts a session
+ * @summary Create an account
+ */
+
+
+export const registerBodyPasswordMin = 6;
+
+
+
+
+
+
+export const RegisterBody = zod.object({
+  "name": zod.string().min(1),
+  "email": zod.string().email().min(1),
+  "password": zod.string().min(registerBodyPasswordMin),
+  "school": zod.string().min(1),
+  "program": zod.string().min(1),
+  "year": zod.string().min(1)
+})
+
+
+
+
+export const RegisterResponse = zod.object({
+  "user": zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "email": zod.string().email().min(1),
+  "school": zod.string(),
+  "program": zod.string(),
+  "year": zod.string()
+})
+})
+
+
+/**
+ * @summary Log in with email and password
+ */
+
+
+
+
+export const LoginBody = zod.object({
+  "email": zod.string().email().min(1),
+  "password": zod.string().min(1)
+})
+
+
+
+
+export const LoginResponse = zod.object({
+  "user": zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "email": zod.string().email().min(1),
+  "school": zod.string(),
+  "program": zod.string(),
+  "year": zod.string()
+})
+})
+
+
+/**
+ * @summary End the current session
+ */
+export const LogoutResponse = zod.void()
+
+
+/**
+ * @summary Get the signed-in user
+ */
+
+
+
+export const GetMeResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "email": zod.string().email().min(1),
+  "school": zod.string(),
+  "program": zod.string(),
+  "year": zod.string()
+})
+
+
+/**
  * @summary Get the unified student dashboard
  */
+
 export const getDashboardResponseMoodItemMoodScoreMax = 5;
 
 
@@ -28,6 +115,7 @@ export const GetDashboardResponse = zod.object({
   "user": zod.object({
   "id": zod.number().int(),
   "name": zod.string(),
+  "email": zod.string().email().min(1),
   "school": zod.string(),
   "program": zod.string(),
   "year": zod.string()
@@ -260,6 +348,135 @@ export const GetSleepLogsResponse = zod.array(GetSleepLogsResponseItem)
 
 
 /**
+ * @summary Match and list relevant scholarships
+ */
+export const getScholarshipsResponseMatchScoreMin = 0;
+export const getScholarshipsResponseMatchScoreMax = 100;
+
+
+
+export const GetScholarshipsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "provider": zod.string(),
+  "deadline": zod.string(),
+  "amount": zod.number().int(),
+  "category": zod.string(),
+  "eligible": zod.boolean(),
+  "matchScore": zod.number().int().min(getScholarshipsResponseMatchScoreMin).max(getScholarshipsResponseMatchScoreMax),
+  "matchReason": zod.string().optional()
+})
+export const GetScholarshipsResponse = zod.array(GetScholarshipsResponseItem)
+
+
+/**
+ * @summary Mood-money stress correlation
+ */
+export const GetStressImpactResponse = zod.object({
+  "periods": zod.array(zod.object({
+  "label": zod.string(),
+  "moodAvg": zod.number(),
+  "moneyStress": zod.number()
+})),
+  "overallCorrelation": zod.number(),
+  "insight": zod.string(),
+  "recommendation": zod.string()
+})
+
+
+/**
+ * @summary Semester workload visualization data
+ */
+export const GetWorkloadResponseItem = zod.object({
+  "week": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "course": zod.string(),
+  "dueDate": zod.string(),
+  "status": zod.enum(['pending', 'late', 'submitted']),
+  "priority": zod.enum(['low', 'medium', 'high'])
+})),
+  "highPriorityCount": zod.number().int(),
+  "intensity": zod.enum(['light', 'moderate', 'heavy', 'critical'])
+})
+export const GetWorkloadResponse = zod.array(GetWorkloadResponseItem)
+
+
+/**
+ * @summary Detect deadline conflicts
+ */
+export const GetConflictsResponseItem = zod.object({
+  "assignments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "course": zod.string(),
+  "dueDate": zod.string(),
+  "status": zod.enum(['pending', 'late', 'submitted']),
+  "priority": zod.enum(['low', 'medium', 'high'])
+})),
+  "message": zod.string(),
+  "severity": zod.enum(['low', 'medium', 'high']),
+  "suggestion": zod.string()
+})
+export const GetConflictsResponse = zod.array(GetConflictsResponseItem)
+
+
+/**
+ * @summary AI-adjusted study plan based on energy levels
+ */
+export const GetStudyPlanResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.number().int(),
+  "day": zod.string(),
+  "startHour": zod.number().int(),
+  "endHour": zod.number().int(),
+  "activity": zod.string(),
+  "energyFit": zod.enum(['high', 'medium', 'low'])
+})),
+  "summary": zod.string(),
+  "energyBasedTip": zod.string()
+})
+
+
+/**
+ * @summary Personal study timetable
+ */
+export const GetTimetableResponseItem = zod.object({
+  "id": zod.number().int(),
+  "day": zod.string(),
+  "startHour": zod.number().int(),
+  "endHour": zod.number().int(),
+  "activity": zod.string(),
+  "energyFit": zod.enum(['high', 'medium', 'low'])
+})
+export const GetTimetableResponse = zod.array(GetTimetableResponseItem)
+
+
+/**
+ * @summary Replace the personal study timetable
+ */
+export const UpdateTimetableBody = zod.object({
+  "blocks": zod.array(zod.object({
+  "day": zod.string(),
+  "startHour": zod.number().int(),
+  "endHour": zod.number().int(),
+  "activity": zod.string()
+}))
+})
+
+export const UpdateTimetableResponseItem = zod.object({
+  "id": zod.number().int(),
+  "day": zod.string(),
+  "startHour": zod.number().int(),
+  "endHour": zod.number().int(),
+  "activity": zod.string(),
+  "energyFit": zod.enum(['high', 'medium', 'low'])
+})
+export const UpdateTimetableResponse = zod.array(UpdateTimetableResponseItem)
+
+
+/**
  * @summary Send a supportive chat message
  */
 
@@ -272,7 +489,9 @@ export const SendChatMessageBody = zod.object({
 export const SendChatMessageResponse = zod.object({
   "message": zod.string(),
   "crisis": zod.boolean(),
-  "resource": zod.string().nullish()
+  "resource": zod.string().nullish(),
+  "suggestions": zod.array(zod.string()).optional(),
+  "intent": zod.string().nullish()
 })
 
 

@@ -4,12 +4,20 @@ CampusOS is a student support dashboard that connects wellbeing, finances, and a
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm run dev` — start the full local stack (API on :5000 + web on :5173 via a single script)
+- `pnpm run dev:api` — run just the API server (port 5000)
+- `pnpm run dev:web` — run just the frontend (port 5173, proxies `/api` → localhost:5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+
+Local env defaults: API server reads `PORT` (default 5000); the web server reads
+`PORT` (default 5173), `BASE_PATH` (default `/`), and `API_PROXY_TARGET`
+(default `http://localhost:5000`). The demo runs entirely on in-memory seeded
+data, so no database is required to boot the app locally. To use the DB layer,
+set `DATABASE_URL` in a local `.env` (git-ignored).
 
 ## Stack
 

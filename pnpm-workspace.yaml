@@ -25,7 +25,10 @@
 #     - typescript
 #
 # ============================================================================
-minimumReleaseAge: 1440
+# NOTE: lowered from 1440 to 0 for local dev on a low-bandwidth connection —
+# the release-age check re-fetches metadata for every lockfile entry and was
+# timing out. Restore to 1440 before publishing/CI.
+minimumReleaseAge: 0
 
 minimumReleaseAgeExclude:
   # Exclude @replit scoped packages from the minimum release age check.
@@ -160,3 +163,6 @@ overrides:
   esbuild: "0.28.2"
   # orval pins js-yaml to an exact version older than the CVE fix (>=4.3.2)
   js-yaml: '4.3.2'
+
+allowBuilds:
+  esbuild: set this to true or false

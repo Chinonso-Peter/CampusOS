@@ -6,12 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface User {
-  id: number;
+export interface RegisterInput {
+  /** @minLength 1 */
   name: string;
   /** @minLength 1 */
   email: string;
+  /** @minLength 6 */
+  password: string;
+  /** @minLength 1 */
   school: string;
+  /** @minLength 1 */
   program: string;
+  /** @minLength 1 */
   year: string;
 }

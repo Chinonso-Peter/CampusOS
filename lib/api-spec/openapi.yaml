@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
   - name: campusos
     description: CampusOS student wellbeing and planning operations
 paths:
@@ -26,6 +28,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Create an account
+      description: Registers a new student and starts a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created account and session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: End the current session
+      responses:
+        "204":
+          description: Logged out
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the signed-in user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
   /dashboard:
     get:
       operationId: getDashboard
@@ -202,6 +275,105 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SleepLog"
+  /scholarships:
+    get:
+      operationId: getScholarships
+      tags: [campusos]
+      summary: Match and list relevant scholarships
+      responses:
+        "200":
+          description: Matched scholarships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Scholarship"
+  /money/stress-impact:
+    get:
+      operationId: getStressImpact
+      tags: [campusos]
+      summary: Mood-money stress correlation
+      responses:
+        "200":
+          description: Stress impact analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StressImpact"
+  /grind/workload:
+    get:
+      operationId: getWorkload
+      tags: [campusos]
+      summary: Semester workload visualization data
+      responses:
+        "200":
+          description: Weekly workload breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkloadWeek"
+  /grind/conflicts:
+    get:
+      operationId: getConflicts
+      tags: [campusos]
+      summary: Detect deadline conflicts
+      responses:
+        "200":
+          description: Detected conflicts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeadlineConflict"
+  /grind/study-plan:
+    get:
+      operationId: getStudyPlan
+      tags: [campusos]
+      summary: AI-adjusted study plan based on energy levels
+      responses:
+        "200":
+          description: Personalised study plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyPlan"
+  /grind/timetable:
+    get:
+      operationId: getTimetable
+      tags: [campusos]
+      summary: Personal study timetable
+      responses:
+        "200":
+          description: Timetable blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudyBlock"
+    post:
+      operationId: updateTimetable
+      tags: [campusos]
+      summary: Replace the personal study timetable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TimetableInput"
+      responses:
+        "200":
+          description: Updated timetable
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudyBlock"
   /chat:
     post:
       operationId: sendChatMessage
@@ -231,13 +403,41 @@ components:
         - status
     User:
       type: object
-      required: [id, name, school, program, year]
+      required: [id, name, email, school, program, year]
       properties:
         id: { type: integer }
         name: { type: string }
+        email: { type: string, format: email, minLength: 1 }
         school: { type: string }
         program: { type: string }
         year: { type: string }
+    RegisterInput:
+      type: object
+      required: [name, email, password, school, program, year]
+      properties:
+        name: { type: string, minLength: 1 }
+        email: { type: string, format: email, minLength: 1 }
+        password: { type: string, minLength: 6 }
+        school: { type: string, minLength: 1 }
+        program: { type: string, minLength: 1 }
+        year: { type: string, minLength: 1 }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, minLength: 1 }
+        password: { type: string, minLength: 1 }
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
     Profile:
       type: object
       required: [name, school, program, year]
@@ -369,4 +569,90 @@ components:
         message: { type: string }
         crisis: { type: boolean }
         resource: { type: ["string", "null"] }
+        suggestions:
+          type: array
+          items: { type: string }
+        intent: { type: string, nullable: true }
+    Scholarship:
+      type: object
+      required: [id, name, provider, deadline, amount, category, eligible, matchScore]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        provider: { type: string }
+        deadline: { type: string }
+        amount: { type: integer }
+        category: { type: string }
+        eligible: { type: boolean }
+        matchScore: { type: integer, minimum: 0, maximum: 100 }
+        matchReason: { type: string }
+    StressImpact:
+      type: object
+      required: [periods, overallCorrelation, insight, recommendation]
+      properties:
+        periods:
+          type: array
+          items:
+            type: object
+            required: [label, moodAvg, moneyStress]
+            properties:
+              label: { type: string }
+              moodAvg: { type: number }
+              moneyStress: { type: number }
+        overallCorrelation: { type: number }
+        insight: { type: string }
+        recommendation: { type: string }
+    WorkloadWeek:
+      type: object
+      required: [week, assignments, highPriorityCount, intensity]
+      properties:
+        week: { type: string }
+        assignments:
+          type: array
+          items: { $ref: "#/components/schemas/Assignment" }
+        highPriorityCount: { type: integer }
+        intensity: { type: string, enum: [light, moderate, heavy, critical] }
+    DeadlineConflict:
+      type: object
+      required: [assignments, message, severity, suggestion]
+      properties:
+        assignments:
+          type: array
+          items: { $ref: "#/components/schemas/Assignment" }
+        message: { type: string }
+        severity: { type: string, enum: [low, medium, high] }
+        suggestion: { type: string }
+    StudyBlock:
+      type: object
+      required: [id, day, startHour, endHour, activity, energyFit]
+      properties:
+        id: { type: integer }
+        day: { type: string }
+        startHour: { type: integer }
+        endHour: { type: integer }
+        activity: { type: string }
+        energyFit: { type: string, enum: [high, medium, low] }
+    StudyPlan:
+      type: object
+      required: [blocks, summary, energyBasedTip]
+      properties:
+        blocks:
+          type: array
+          items: { $ref: "#/components/schemas/StudyBlock" }
+        summary: { type: string }
+        energyBasedTip: { type: string }
+    TimetableInput:
+      type: object
+      required: [blocks]
+      properties:
+        blocks:
+          type: array
+          items:
+            type: object
+            required: [day, startHour, endHour, activity]
+            properties:
+              day: { type: string }
+              startHour: { type: integer }
+              endHour: { type: integer }
+              activity: { type: string }
 

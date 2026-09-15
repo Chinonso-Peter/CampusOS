@@ -11,4 +11,6 @@ export interface ChatResponse {
   crisis: boolean;
   /** @nullable */
   resource?: string | null;
+  suggestions?: string[];
+  intent?: string | null;
 }

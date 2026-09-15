@@ -12,9 +12,41 @@ export interface HealthStatus {
 export interface User {
   id: number;
   name: string;
+  /** @minLength 1 */
+  email: string;
   school: string;
   program: string;
   year: string;
+}
+
+export interface RegisterInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  email: string;
+  /** @minLength 6 */
+  password: string;
+  /** @minLength 1 */
+  school: string;
+  /** @minLength 1 */
+  program: string;
+  /** @minLength 1 */
+  year: string;
+}
+
+export interface LoginInput {
+  /** @minLength 1 */
+  email: string;
+  /** @minLength 1 */
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+}
+
+export interface ErrorBody {
+  error: string;
 }
 
 export interface Profile {
@@ -215,5 +247,104 @@ export interface ChatResponse {
   crisis: boolean;
   /** @nullable */
   resource?: string | null;
+  suggestions?: string[];
+  intent?: string | null;
+}
+
+export interface Scholarship {
+  id: number;
+  name: string;
+  provider: string;
+  deadline: string;
+  amount: number;
+  category: string;
+  eligible: boolean;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  matchScore: number;
+  matchReason?: string;
+}
+
+export type StressImpactPeriodsItem = {
+  label: string;
+  moodAvg: number;
+  moneyStress: number;
+};
+
+export interface StressImpact {
+  periods: StressImpactPeriodsItem[];
+  overallCorrelation: number;
+  insight: string;
+  recommendation: string;
+}
+
+export type WorkloadWeekIntensity = typeof WorkloadWeekIntensity[keyof typeof WorkloadWeekIntensity];
+
+
+export const WorkloadWeekIntensity = {
+  light: 'light',
+  moderate: 'moderate',
+  heavy: 'heavy',
+  critical: 'critical',
+} as const;
+
+export interface WorkloadWeek {
+  week: string;
+  assignments: Assignment[];
+  highPriorityCount: number;
+  intensity: WorkloadWeekIntensity;
+}
+
+export type DeadlineConflictSeverity = typeof DeadlineConflictSeverity[keyof typeof DeadlineConflictSeverity];
+
+
+export const DeadlineConflictSeverity = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export interface DeadlineConflict {
+  assignments: Assignment[];
+  message: string;
+  severity: DeadlineConflictSeverity;
+  suggestion: string;
+}
+
+export type StudyBlockEnergyFit = typeof StudyBlockEnergyFit[keyof typeof StudyBlockEnergyFit];
+
+
+export const StudyBlockEnergyFit = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface StudyBlock {
+  id: number;
+  day: string;
+  startHour: number;
+  endHour: number;
+  activity: string;
+  energyFit: StudyBlockEnergyFit;
+}
+
+export interface StudyPlan {
+  blocks: StudyBlock[];
+  summary: string;
+  energyBasedTip: string;
+}
+
+export type TimetableInputBlocksItem = {
+  day: string;
+  startHour: number;
+  endHour: number;
+  activity: string;
+};
+
+export interface TimetableInput {
+  blocks: TimetableInputBlocksItem[];
 }
 

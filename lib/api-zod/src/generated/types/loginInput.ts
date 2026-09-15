@@ -6,12 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface User {
-  id: number;
-  name: string;
+export interface LoginInput {
   /** @minLength 1 */
   email: string;
-  school: string;
-  program: string;
-  year: string;
+  /** @minLength 1 */
+  password: string;
 }
