@@ -298,53 +298,77 @@ const CRISIS_PHRASES = [
   "kill myself",
   "self-harm",
   "end my life",
+  "end it all",
+  "end this life",
   "hurt myself",
   "don't want to be here",
+  "don't want to live",
+  "don't want to wake up",
   "better off dead",
   "want to disappear",
+  "want to die",
+  "want out",
   "cant go on",
   "can't go on",
+  "can't take it anymore",
+  "cant take it anymore",
+  "give up on life",
+  "no reason to live",
+  "no point in living",
+  "nobody would care if i died",
+  "world better off without me",
+  "hopeless",
+  "no hope",
+  "hate myself",
+  "worthless",
+  "nobody cares about me",
+  "i'm done with everything",
+  "im done with everything",
+  "over everything",
+  "slit my wrists",
+  "overdose",
+  "hang myself",
 ];
 
 const INTENTS: Array<{ id: string; keywords: string[]; openers: string[]; bodies: string[]; clossers: string[] }> = [
   {
     id: "money",
-    keywords: ["money", "broke", "rent", "fee", "debt", "fafsa", "scholarship", "loan", "budget", "afford", "cash", "bills", "school fees"],
+    keywords: ["money", "broke", "rent", "fee", "debt", "fafsa", "scholarship", "loan", "budget", "afford", "cash", "bills", "school fees", "tuition", "financial"],
     openers: [],
     bodies: [],
     clossers: [],
   },
   {
     id: "workload",
-    keywords: ["assignment", "deadline", "overwhelmed", "workload", "procrastinat", "behind", "exam", "test", "quiz", "project", "submission", "study", "cram"],
+    keywords: ["assignment", "deadline", "overwhelmed", "overwhelm", "workload", "procrastinat", "behind", "exam", "test", "quiz", "project", "submission", "study", "cram", "too much", "stressed"],
     openers: [],
     bodies: [],
     clossers: [],
   },
   {
     id: "sleep",
-    keywords: ["sleep", "tired", "exhausted", "insomnia", "night", "awake", "fatigue", "rest", "can't focus"],
+    keywords: ["sleep", "slept", "tired", "exhausted", "insomnia", "night", "awake", "fatigue", "rest", "drowsy", "can't focus", "cant focus", "no energy"],
     openers: [],
     bodies: [],
     clossers: [],
   },
   {
     id: "lonely",
-    keywords: ["alone", "lonely", "isolated", "no friend", "friends", "miss home", "homesick", "no one", "left out"],
+    keywords: ["alone", "lonely", "isolated", "no friend", "no friends", "friends", "miss home", "homesick", "no one", "left out", "nobody", "don't belong", "cant talk", "no one talks"],
     openers: [],
     bodies: [],
     clossers: [],
   },
   {
     id: "future",
-    keywords: ["future", "what next", "career", "after graduation", "uncertain", "lost", "scared", "gpa", "grades dropped"],
+    keywords: ["future", "what next", "career", "after graduation", "uncertain", "lost", "scared", "gpa", "grades dropped", "grades dropping", "what am i doing"],
     openers: [],
     bodies: [],
     clossers: [],
   },
   {
     id: "gratitude",
-    keywords: ["thank", "thanks", "appreciate", "helpful", "great", "amazing"],
+    keywords: ["thank", "thanks", "appreciate", "helpful", "great", "amazing", "you helped"],
     openers: [],
     bodies: [],
     clossers: [],
@@ -364,8 +388,8 @@ function detectIntent(message: string): IntentId {
   const best = counts.sort((a, b) => b.score - a.score)[0];
   if (best && best.score > 0) return best.id;
 
-  const greeting = /^(hi|hello|hey|yo|good\s*(morning|afternoon|evening))\b/.test(message.toLowerCase());
-  if (greeting) return "gratitude";
+  const greeting = /^(hi|hello|hey|yo|sup|good\s*(morning|afternoon|evening)|how are you|what'?s up)\b/i.test(text);
+  if (greeting) return "general";
   return "general";
 }
 
@@ -383,15 +407,18 @@ function moodTrendPhrase(data: UserData): string | null {
 function contextLines(data: UserData): string[] {
   const lines: string[] = [];
   const late = data.assignments.filter((item) => item.status === "late").length;
-  if (late > 0) lines.push(`you have ${late} assignment${late === 1 ? "" : "s"} sitting late right now`);
-  const weekly = data.workHours[0]?.hoursWorked ?? 0;
+  const upcoming = data.assignments.filter((item) => item.status === "pending").length;
+  if (late > 0) lines.push(`${late} assignment${late === 1 ? " is" : "s are"} sitting past due`);
+  else if (upcoming > 0) lines.push(`you have ${upcoming} open assignment${upcoming === 1 ? "" : "s"} coming up`);
   const avgSleep = data.sleepLogs.length
     ? data.sleepLogs.reduce((sum, item) => sum + item.hoursSlept, 0) / data.sleepLogs.length
     : 0;
-  if (weekly >= 25 && avgSleep < 6) lines.push(`${weekly} work hours and an average of ${avgSleep.toFixed(1)} hours of sleep is a lot to carry`);
+  const weekly = data.workHours[0]?.hoursWorked ?? 0;
+  if (avgSleep > 0 && avgSleep < 6) lines.push(`you've been averaging ${avgSleep.toFixed(1)} hours of sleep`);
+  if (weekly >= 20) lines.push(`you've logged ${weekly} study hours this week`);
   const mood = moodTrendPhrase(data);
   if (mood) lines.push(mood.toLowerCase());
-  return lines;
+  return lines.slice(0, 2);
 }
 
 function politeSuggestions(intent: IntentId): string[] {
@@ -413,7 +440,7 @@ function politeSuggestions(intent: IntentId): string[] {
 
 function buildReply(message: string, intent: IntentId, data: UserData): { text: string; suggestions: string[] } {
   const context = contextLines(data);
-  const contextPhrase = context.length ? ` Right now it looks like ${context.slice(0, 2).join(", and ")}.` : "";
+  const contextPhrase = context.length ? ` From what I can see: ${context.join(", ")}.` : "";
   const first = message.trim();
 
   switch (intent) {
