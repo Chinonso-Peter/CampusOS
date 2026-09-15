@@ -67,6 +67,53 @@ export const GetDashboardResponse = zod.object({
 
 
 /**
+ * @summary Get the signed-in student's profile
+ */
+
+
+
+
+
+
+export const GetProfileResponse = zod.object({
+  "name": zod.string().min(1),
+  "school": zod.string().min(1),
+  "program": zod.string().min(1),
+  "year": zod.string().min(1)
+})
+
+
+/**
+ * @summary Update the signed-in student's profile
+ */
+
+
+
+
+
+
+export const UpdateProfileBody = zod.object({
+  "name": zod.string().min(1),
+  "school": zod.string().min(1),
+  "program": zod.string().min(1),
+  "year": zod.string().min(1)
+})
+
+
+
+
+
+
+
+export const UpdateProfileResponse = zod.object({
+  "name": zod.string().min(1),
+  "school": zod.string().min(1),
+  "program": zod.string().min(1),
+  "year": zod.string().min(1)
+})
+
+
+/**
  * @summary Get actionable cross-domain signals
  */
 export const GetSignalsResponseItem = zod.object({

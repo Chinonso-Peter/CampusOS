@@ -23,6 +23,8 @@ export * from './moodCheckIn';
 export * from './moodCheckInInput';
 export * from './pillarSummary';
 export * from './pillarSummaryTone';
+export * from './profile';
+export * from './profileUpdate';
 export * from './signal';
 export * from './signalCategory';
 export * from './signalSeverity';

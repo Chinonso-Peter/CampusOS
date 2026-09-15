@@ -38,6 +38,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Dashboard"
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [campusos]
+      summary: Get the signed-in student's profile
+      responses:
+        "200":
+          description: Student profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    patch:
+      operationId: updateProfile
+      tags: [campusos]
+      summary: Update the signed-in student's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated student profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
   /signals:
     get:
       operationId: getSignals
@@ -209,6 +238,22 @@ components:
         school: { type: string }
         program: { type: string }
         year: { type: string }
+    Profile:
+      type: object
+      required: [name, school, program, year]
+      properties:
+        name: { type: string, minLength: 1 }
+        school: { type: string, minLength: 1 }
+        program: { type: string, minLength: 1 }
+        year: { type: string, minLength: 1 }
+    ProfileUpdate:
+      type: object
+      required: [name, school, program, year]
+      properties:
+        name: { type: string, minLength: 1 }
+        school: { type: string, minLength: 1 }
+        program: { type: string, minLength: 1 }
+        year: { type: string, minLength: 1 }
     MoodCheckIn:
       type: object
       required: [id, date, moodScore]

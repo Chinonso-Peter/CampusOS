@@ -17,6 +17,28 @@ export interface User {
   year: string;
 }
 
+export interface Profile {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  school: string;
+  /** @minLength 1 */
+  program: string;
+  /** @minLength 1 */
+  year: string;
+}
+
+export interface ProfileUpdate {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  school: string;
+  /** @minLength 1 */
+  program: string;
+  /** @minLength 1 */
+  year: string;
+}
+
 export interface MoodCheckIn {
   id: number;
   date: string;
