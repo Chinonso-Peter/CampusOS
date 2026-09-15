@@ -23,6 +23,7 @@ import {
   GetTimetableResponse,
   UpdateTimetableBody,
   UpdateTimetableResponse,
+  UpdateAssignmentBody,
   type User,
 } from "@workspace/api-zod";
 import { resolveSession } from "../lib/auth";
@@ -278,6 +279,20 @@ router.post("/assignments", (req, res) => {
   const item: Assignment = { id: data.nextId++, title: input.title, course: input.course, dueDate: input.dueDate, status: "pending", priority: input.priority ?? "medium" };
   data.assignments = [item, ...data.assignments];
   res.status(201).json(CreateAssignmentResponse.parse(item));
+});
+
+router.patch("/assignments/:id", (req, res) => {
+  const user = currentUser(req);
+  const data = getUserData(user);
+  const id = Number(req.params.id);
+  const assignment = data.assignments.find((item) => item.id === id);
+  if (!assignment) {
+    res.status(404).json({ error: "Assignment not found." });
+    return;
+  }
+  const { status } = UpdateAssignmentBody.parse(req.body);
+  assignment.status = status ?? assignment.status;
+  res.json(GetAssignmentsResponse.parse([assignment])[0] ?? assignment);
 });
 
 router.post("/finance-events", (req, res) => {

@@ -291,6 +291,27 @@ export const CreateAssignmentResponse = zod.object({
 
 
 /**
+ * @summary Update an assignment (e.g. mark done)
+ */
+export const UpdateAssignmentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const UpdateAssignmentBody = zod.object({
+  "status": zod.enum(['pending', 'late', 'submitted']).optional()
+})
+
+export const UpdateAssignmentResponse = zod.object({
+  "id": zod.number().int(),
+  "title": zod.string(),
+  "course": zod.string(),
+  "dueDate": zod.string(),
+  "status": zod.enum(['pending', 'late', 'submitted']),
+  "priority": zod.enum(['low', 'medium', 'high'])
+})
+
+
+/**
  * @summary List finance events
  */
 export const GetFinanceEventsResponseItem = zod.object({

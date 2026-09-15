@@ -348,3 +348,16 @@ export interface TimetableInput {
   blocks: TimetableInputBlocksItem[];
 }
 
+export type AssignmentStatusUpdateStatus = typeof AssignmentStatusUpdateStatus[keyof typeof AssignmentStatusUpdateStatus];
+
+
+export const AssignmentStatusUpdateStatus = {
+  pending: 'pending',
+  late: 'late',
+  submitted: 'submitted',
+} as const;
+
+export interface AssignmentStatusUpdate {
+  status?: AssignmentStatusUpdateStatus;
+}
+

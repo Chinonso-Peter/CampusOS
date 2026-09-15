@@ -11,6 +11,8 @@ export * from './assignmentInput';
 export * from './assignmentInputPriority';
 export * from './assignmentPriority';
 export * from './assignmentStatus';
+export * from './assignmentStatusUpdate';
+export * from './assignmentStatusUpdateStatus';
 export * from './authResponse';
 export * from './chatInput';
 export * from './chatResponse';

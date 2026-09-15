@@ -216,6 +216,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Assignment"
+  /assignments/{id}:
+    patch:
+      operationId: updateAssignment
+      tags: [campusos]
+      summary: Update an assignment (e.g. mark done)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentStatusUpdate"
+      responses:
+        "200":
+          description: Updated assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+        "404":
+          description: Assignment not found
   /finance-events:
     get:
       operationId: getFinanceEvents
@@ -655,4 +680,8 @@ components:
               startHour: { type: integer }
               endHour: { type: integer }
               activity: { type: string }
+    AssignmentStatusUpdate:
+      type: object
+      properties:
+        status: { type: string, enum: [pending, late, submitted] }
 
