@@ -1,6 +1,6 @@
-# [Project name]
+# CampusOS
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+CampusOS is a student support dashboard that connects wellbeing, finances, and academic workload into actionable signals.
 
 ## Run & Operate
 
@@ -22,15 +22,20 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/campusos/src/App.tsx` — responsive dashboard UI and pillar routes
+- `artifacts/campusos/src/index.css` — CampusOS visual theme and motion utilities
+- `artifacts/api-server/src/routes/campusos.ts` — seeded demo data, CRUD inputs, signal rules, and supportive chat
+- `lib/api-spec/openapi.yaml` — source of truth for generated API clients and validation schemas
 
 ## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first build uses a seeded in-memory demo profile so the hackathon pitch always has live signals without a migration or empty-state risk.
+- API contracts remain OpenAPI-first and frontend calls use generated React Query hooks.
+- The signal engine is rule-based and intentionally explainable; each signal names the cross-domain inputs that triggered it.
+- The chat route includes a deterministic crisis escalation path before any supportive response is returned.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The dashboard gives one student a Today overview plus Mind, Money, and Grind spaces. It supports mood check-ins, supportive chat, finance events, assignments, workload context, and a cross-domain Signals feed.
 
 ## User preferences
 
@@ -38,7 +43,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Seeded records reset when the API workflow restarts; this is deliberate for a predictable demo.
+- Re-run `pnpm --filter @workspace/api-spec run codegen` after changing the OpenAPI contract.
 
 ## Pointers
 

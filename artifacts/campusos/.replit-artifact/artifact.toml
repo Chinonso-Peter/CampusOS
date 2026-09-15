@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CampusOS"
+description = "A student support dashboard that connects wellbeing, finances, and academic workload into actionable signals for a single student."
+version = "1.0.0"
+id = "artifacts/campusos"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23447
+
+[services.development]
+run = "pnpm --filter @workspace/campusos run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/campusos", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/campusos/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23447"
+BASE_PATH = "/"

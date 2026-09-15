@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: campusos
+    description: CampusOS student wellbeing and planning operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,171 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [campusos]
+      summary: Get the unified student dashboard
+      responses:
+        "200":
+          description: Dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /signals:
+    get:
+      operationId: getSignals
+      tags: [campusos]
+      summary: Get actionable cross-domain signals
+      responses:
+        "200":
+          description: Signals feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Signal"
+  /mood-checkins:
+    get:
+      operationId: getMoodCheckIns
+      tags: [campusos]
+      summary: List recent mood check-ins
+      responses:
+        "200":
+          description: Mood check-ins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MoodCheckIn"
+    post:
+      operationId: createMoodCheckIn
+      tags: [campusos]
+      summary: Record a mood check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoodCheckInInput"
+      responses:
+        "201":
+          description: Created mood check-in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoodCheckIn"
+  /assignments:
+    get:
+      operationId: getAssignments
+      tags: [campusos]
+      summary: List assignments
+      responses:
+        "200":
+          description: Assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assignment"
+    post:
+      operationId: createAssignment
+      tags: [campusos]
+      summary: Create an assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentInput"
+      responses:
+        "201":
+          description: Created assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+  /finance-events:
+    get:
+      operationId: getFinanceEvents
+      tags: [campusos]
+      summary: List finance events
+      responses:
+        "200":
+          description: Finance events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinanceEvent"
+    post:
+      operationId: createFinanceEvent
+      tags: [campusos]
+      summary: Create a finance event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceEventInput"
+      responses:
+        "201":
+          description: Created finance event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceEvent"
+  /work-hours:
+    get:
+      operationId: getWorkHours
+      tags: [campusos]
+      summary: List weekly work hours
+      responses:
+        "200":
+          description: Work hours
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkHours"
+  /sleep-logs:
+    get:
+      operationId: getSleepLogs
+      tags: [campusos]
+      summary: List recent sleep logs
+      responses:
+        "200":
+          description: Sleep logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SleepLog"
+  /chat:
+    post:
+      operationId: sendChatMessage
+      tags: [campusos]
+      summary: Send a supportive chat message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "200":
+          description: Supportive response or crisis escalation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +200,128 @@ components:
           type: string
       required:
         - status
+    User:
+      type: object
+      required: [id, name, school, program, year]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        school: { type: string }
+        program: { type: string }
+        year: { type: string }
+    MoodCheckIn:
+      type: object
+      required: [id, date, moodScore]
+      properties:
+        id: { type: integer }
+        date: { type: string }
+        moodScore: { type: integer, minimum: 1, maximum: 5 }
+        note: { type: ["string", "null"] }
+    MoodCheckInInput:
+      type: object
+      required: [moodScore]
+      properties:
+        moodScore: { type: integer, minimum: 1, maximum: 5 }
+        note: { type: string }
+    Assignment:
+      type: object
+      required: [id, title, course, dueDate, status, priority]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        course: { type: string }
+        dueDate: { type: string }
+        status: { type: string, enum: [pending, late, submitted] }
+        priority: { type: string, enum: [low, medium, high] }
+    AssignmentInput:
+      type: object
+      required: [title, course, dueDate]
+      properties:
+        title: { type: string }
+        course: { type: string }
+        dueDate: { type: string }
+        priority: { type: string, enum: [low, medium, high] }
+    FinanceEvent:
+      type: object
+      required: [id, type, label, date, amount, category]
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [deadline, expense, income] }
+        label: { type: string }
+        date: { type: string }
+        amount: { type: ["number", "null"] }
+        category: { type: string }
+    FinanceEventInput:
+      type: object
+      required: [type, label, date, category]
+      properties:
+        type: { type: string, enum: [deadline, expense, income] }
+        label: { type: string }
+        date: { type: string }
+        amount: { type: number }
+        category: { type: string }
+    WorkHours:
+      type: object
+      required: [id, week, hoursWorked]
+      properties:
+        id: { type: integer }
+        week: { type: string }
+        hoursWorked: { type: number }
+    SleepLog:
+      type: object
+      required: [id, date, hoursSlept]
+      properties:
+        id: { type: integer }
+        date: { type: string }
+        hoursSlept: { type: number }
+    Signal:
+      type: object
+      required: [id, category, title, description, action, severity, createdAt]
+      properties:
+        id: { type: integer }
+        category: { type: string, enum: [mind, money, grind] }
+        title: { type: string }
+        description: { type: string }
+        action: { type: string }
+        severity: { type: string, enum: [watch, attention, urgent] }
+        createdAt: { type: string }
+    PillarSummary:
+      type: object
+      required: [label, value, detail, tone]
+      properties:
+        label: { type: string }
+        value: { type: string }
+        detail: { type: string }
+        tone: { type: string, enum: [mind, money, grind] }
+    Dashboard:
+      type: object
+      required: [user, greeting, patternInsight, pillars, assignments, signals, mood]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        greeting: { type: string }
+        patternInsight: { type: string }
+        pillars:
+          type: array
+          items: { $ref: "#/components/schemas/PillarSummary" }
+        assignments:
+          type: array
+          items: { $ref: "#/components/schemas/Assignment" }
+        signals:
+          type: array
+          items: { $ref: "#/components/schemas/Signal" }
+        mood:
+          type: array
+          items: { $ref: "#/components/schemas/MoodCheckIn" }
+    ChatInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1 }
+    ChatResponse:
+      type: object
+      required: [message, crisis]
+      properties:
+        message: { type: string }
+        crisis: { type: boolean }
+        resource: { type: ["string", "null"] }
 
