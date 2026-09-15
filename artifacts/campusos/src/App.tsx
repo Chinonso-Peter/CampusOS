@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import {
-  Activity, ArrowUpRight, BookOpen, CalendarDays, Check, ChevronRight, CircleDollarSign, Clock3,
-  Command, HeartPulse, Home, Landmark, MessageCircle, MoreHorizontal, Plus, Send, Sparkles,
-  Target, TrendingDown, TrendingUp, WalletCards, X, Zap
+  Activity, ArrowUpRight, Bell, BellRing, BookOpen, CalendarDays, Check, CheckCheck, ChevronRight,
+  CircleDollarSign, Clock3, Command, HeartPulse, Home, Landmark, MessageCircle, MoreHorizontal,
+  Plus, Send, Sparkles, Target, TrendingDown, TrendingUp, WalletCards, X, Zap
 } from 'lucide-react';
 import {
   useGetDashboard, useGetSignals, useGetMoodCheckIns, useCreateMoodCheckIn,
@@ -23,6 +23,51 @@ const cx = (...parts: Array<string | false | undefined>) => parts.filter(Boolean
 const dateLabel = (date?: string, opts?: Intl.DateTimeFormatOptions) => date ? new Intl.DateTimeFormat('en-US', opts ?? { month: 'short', day: 'numeric' }).format(new Date(date)) : '—';
 const todayEyebrow = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
 const money = (amount?: number | null) => amount == null ? '—' : new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(amount);
+type DeadlineNotification = { id: string; title: string; detail: string; date: string; urgent: boolean; href: string };
+
+function daysUntil(date: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${date}T00:00:00`);
+  return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+}
+
+function buildDeadlineNotifications(assignments: Assignment[], financeEvents: FinanceEvent[]) {
+  const assignmentNotifications: DeadlineNotification[] = assignments
+    .filter((item) => item.status !== 'submitted')
+    .map((item) => {
+      const days = daysUntil(item.dueDate);
+      return {
+        id: `assignment-${item.id}-${item.dueDate}`,
+        title: item.status === 'late' || days < 0 ? `Overdue: ${item.title}` : `${item.title} is due soon`,
+        detail: days < 0 ? `${Math.abs(days)} days overdue · ${item.course}` : days === 0 ? `Due today · ${item.course}` : `Due in ${days} day${days === 1 ? '' : 's'} · ${item.course}`,
+        date: item.dueDate,
+        urgent: item.status === 'late' || days <= 2,
+        href: '/grind',
+      };
+    })
+    .filter((item) => daysUntil(item.date) <= 14);
+
+  const financeNotifications: DeadlineNotification[] = financeEvents
+    .filter((item) => item.type === 'deadline')
+    .map((item) => {
+      const days = daysUntil(item.date);
+      return {
+        id: `finance-${item.id}-${item.date}`,
+        title: days < 0 ? `Overdue: ${item.label}` : `${item.label} is coming up`,
+        detail: days < 0 ? `${Math.abs(days)} days overdue · ${item.category}` : days === 0 ? `Due today · ${item.category}` : `Due in ${days} day${days === 1 ? '' : 's'} · ${item.category}`,
+        date: item.date,
+        urgent: days <= 5,
+        href: '/money',
+      };
+    })
+    .filter((item) => daysUntil(item.date) <= 14);
+
+  return [...assignmentNotifications, ...financeNotifications].sort((a, b) => {
+    if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
+    return a.date.localeCompare(b.date);
+  });
+}
 
 function LoadingBlock({ lines = 3 }: { lines?: number }) {
   return <div className="space-y-3 animate-pulse" data-testid="loading-skeleton">{Array.from({ length: lines }).map((_, i) => <div key={i} className={cx("h-4 rounded-full bg-muted", i === 0 ? "w-2/5" : i === lines - 1 ? "w-3/5" : "w-full")} />)}</div>;
@@ -56,8 +101,64 @@ function MobileNav() {
 function Topbar({ eyebrow, title }: { eyebrow: string; title: string }) {
   return <header className="mb-8 flex items-end justify-between gap-4"><div><p className="mb-2 font-mono text-[10px] uppercase tracking-[.2em] text-primary" data-testid="text-eyebrow">{eyebrow}</p><h1 className="font-serif text-3xl font-extrabold tracking-tight sm:text-4xl" data-testid="text-page-title">{title}</h1></div><button className="hidden items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:text-foreground sm:flex" data-testid="button-command"><Command size={14} /> Quick view <span className="font-mono text-[10px] text-muted-foreground/60">⌘ K</span></button></header>;
 }
+
+function NotificationCenter() {
+  const assignments = useGetAssignments();
+  const financeEvents = useGetFinanceEvents();
+  const [open, setOpen] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof Notification === 'undefined' ? 'denied' : Notification.permission,
+  );
+  const notifications = useMemo(
+    () => buildDeadlineNotifications(assignments.data ?? [], financeEvents.data ?? []),
+    [assignments.data, financeEvents.data],
+  );
+
+  const announce = (item: DeadlineNotification) => {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    const key = `campusos-notified-${item.id}`;
+    if (localStorage.getItem(key)) return;
+    new Notification(item.title, { body: item.detail, tag: item.id });
+    localStorage.setItem(key, 'true');
+  };
+
+  useEffect(() => {
+    if (permission !== 'granted') return;
+    notifications.slice(0, 3).forEach(announce);
+  }, [permission, notifications]);
+
+  const enableAlerts = async () => {
+    if (typeof Notification === 'undefined') return;
+    const nextPermission = await Notification.requestPermission();
+    setPermission(nextPermission);
+    if (nextPermission === 'granted') notifications.slice(0, 3).forEach(announce);
+  };
+
+  return <div className="relative">
+    <button onClick={() => setOpen((value) => !value)} className="relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:border-primary/40 hover:text-foreground" aria-label="Open deadline notifications" aria-expanded={open} data-testid="button-notifications">
+      {notifications.length ? <BellRing size={17} className="text-primary" /> : <Bell size={17} />}
+      {notifications.length > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 font-mono text-[9px] font-bold text-destructive-foreground" data-testid="notification-count">{notifications.length}</span>}
+    </button>
+    {open && <div className="absolute right-0 top-12 z-40 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" data-testid="notification-panel">
+      <div className="flex items-start justify-between border-b border-border p-4">
+        <div><p className="font-serif text-base font-extrabold">Deadline reminders</p><p className="mt-1 text-xs text-muted-foreground">{notifications.length ? `${notifications.length} item${notifications.length === 1 ? '' : 's'} need your attention` : 'You are clear for now'}</p></div>
+        <CheckCheck size={17} className="mt-1 text-primary" />
+      </div>
+      <div className="max-h-72 overflow-y-auto p-2">
+        {notifications.length ? notifications.map((item) => <Link key={item.id} href={item.href} onClick={() => setOpen(false)} className="flex gap-3 rounded-xl p-3 transition hover:bg-muted" data-testid={`notification-${item.id}`}>
+          <span className={cx("mt-1.5 h-2 w-2 shrink-0 rounded-full", item.urgent ? "bg-destructive" : "bg-accent")} />
+          <span className="min-w-0"><span className="block text-sm font-bold">{item.title}</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{item.detail}</span></span>
+        </Link>) : <div className="p-6 text-center"><Check size={18} className="mx-auto text-primary" /><p className="mt-2 text-sm font-semibold">Nothing urgent</p><p className="mt-1 text-xs text-muted-foreground">New reminders will appear here automatically.</p></div>}
+      </div>
+      <div className="border-t border-border bg-muted/40 p-3">
+        {permission === 'granted' ? <p className="flex items-center gap-2 text-[11px] font-semibold text-primary"><BellRing size={13} /> Browser alerts are enabled</p> : <button onClick={enableAlerts} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground transition hover:-translate-y-0.5" data-testid="button-enable-notifications"><Bell size={14} /> Enable browser alerts</button>}
+      </div>
+    </div>}
+  </div>;
+}
+
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="grain app-shell flex min-h-[100dvh]"><Sidebar /><main className="min-w-0 flex-1 pb-20 lg:pb-0"><div className="mx-auto max-w-[1320px] px-5 py-7 sm:px-8 lg:px-12 lg:py-10">{children}</div></main><MobileNav /></div>;
+  return <div className="grain app-shell flex min-h-[100dvh]"><Sidebar /><main className="min-w-0 flex-1 pb-20 lg:pb-0"><div className="relative mx-auto max-w-[1320px] px-5 py-7 sm:px-8 lg:px-12 lg:py-10"><div className="absolute right-5 top-5 z-30 sm:right-8 lg:right-12"><NotificationCenter /></div>{children}</div></main><MobileNav /></div>;
 }
 function Card({ children, className = '', testId }: { children: React.ReactNode; className?: string; testId?: string }) {
   return <section className={cx("rounded-[1.35rem] border border-card-border bg-card p-5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-6", className)} data-testid={testId}>{children}</section>;
